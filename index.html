@@ -3,6 +3,37 @@ let deck;
 let resetDeck = [];
 let tmpNext;
 
+const tableauWidth = 9;
+
+let values = [
+  ['A', 1],
+  ['2', 2],
+  ['3', 3],
+  ['4', 4],
+  ['5', 5],
+  ['6', 6],
+  ['7', 7],
+  ['8', 8],
+  ['9', 9],
+  ['10', 10],
+  ['J', 11],
+  ['Q', 12],
+  ['K', 13]
+];
+const lValue = values[0][1];
+const hValue = values[values.length-1][1];
+
+let suits = [
+  ["♤", "club", "black"],
+  ["♡", "heart", "red"],
+  ["♧", "clover", "black"],
+  ["♢", "diamond", "red"],
+  ["♂", "male", "green"],
+  ["♀", "female", "green"],
+  ["+", "plus", "blue"],
+  ["-", "minus", "blue"]
+];
+
 let allowdrop = event => {
   if (event.dataTransfer.getData("x-solitaire/card") == "")
     return;
@@ -12,11 +43,11 @@ let allowdrop = event => {
 
   if (event.target.classList.contains("foundation") &&
       event.target.getAttribute("suit") == bottom.getAttribute("suit") &&
-      parseInt(event.target.getAttribute("value")||0) + 1 == parseInt(bottom.getAttribute("value"))) {
+      (parseInt(event.target.getAttribute("value"))||(lValue-1)) + 1 == parseInt(bottom.getAttribute("value"))) {
         event.preventDefault();
   }
 
-  if (event.target.classList.contains("card-stem") && bottom.getAttribute("value") == "13")
+  if (event.target.classList.contains("card-stem") && bottom.getAttribute("value") == hValue)
     event.preventDefault();
 
   if (!event.target.classList.contains("card") && !event.target.classList.contains("card-stem"))
@@ -71,33 +102,6 @@ let drag = event => {
     event.dataTransfer.setData("x-solitaire/card", event.target.id);
 }
 
-let values = [
-  ['A', 1],
-  ['2', 2],
-  ['3', 3],
-  ['4', 4],
-  ['5', 5],
-  ['6', 6],
-  ['7', 7],
-  ['8', 8],
-  ['9', 9],
-  ['10', 10],
-  ['J', 11],
-  ['Q', 12],
-  ['K', 13]
-];
-
-let suits = [
-  ["♤", "club", "black"],
-  ["♡", "heart", "red"],
-  ["♧", "clover", "black"],
-  ["♢", "diamond", "red"],
-  ["♂", "male", "green"],
-  ["♀", "female", "green"],
-  ["+", "plus", "blue"],
-  ["-", "minus", "blue"]
-];
-
 let assembleRandomisedDeck = () => {
   let initDeck = [];
   suits.forEach(suit =>
@@ -119,7 +123,10 @@ let addCard = parent => {
   let card = document.createElement("span")
   card.className = "card";
   
-  card.id = Math.floor(10000 * Math.random());
+  do
+    card.id = Math.floor(10000 * Math.random())
+  while (document.getElementById(card.id));
+
   card.draggable = true;
 
   console.log(data);
@@ -143,7 +150,9 @@ window.addEventListener("DOMContentLoaded", () => {
   deck = assembleRandomisedDeck();
   let board = document.getElementById("board");
 
-  for (i=1; i<=9; i++) {
+  for (i=1; i<=tableauWidth; i++) {
+    if (deck.length == 0)
+      break;
     let cardStem = document.createElement("li");
     board.appendChild(cardStem);
     cardStem.className = "card-stem";
@@ -151,6 +160,8 @@ window.addEventListener("DOMContentLoaded", () => {
     let lastChild = cardStem;
 
     for (j=0; j<i; j++) {
+      if (deck.length == 0)
+        break;
       let newChild = addCard(lastChild);
       lastChild = newChild;
     }
@@ -206,6 +217,7 @@ let next = () => {
   display: block;
   position: absolute;
   top: 20px;
+  left: -1px;
 }
 
 .card[gender=red] {
