@@ -1,0 +1,245 @@
+<script>
+let deck;
+let resetDeck = [];
+let tmpNext;
+
+let allowdrop = event => {
+  if (event.dataTransfer.getData("x-solitaire/card") == "")
+    return;
+
+  let bottom = document.getElementById(event.dataTransfer.getData("x-solitaire/card"));
+  let bottom_gender = bottom.getAttribute("gender");
+
+  if (event.target.classList.contains("foundation") &&
+      event.target.getAttribute("suit") == bottom.getAttribute("suit") &&
+      parseInt(event.target.getAttribute("value")||0) + 1 == parseInt(bottom.getAttribute("value"))) {
+        event.preventDefault();
+  }
+
+  if (event.target.classList.contains("card-stem") && bottom.getAttribute("value") == "13")
+    event.preventDefault();
+
+  if (!event.target.classList.contains("card") && !event.target.classList.contains("card-stem"))
+    return;
+
+  if (bottom_gender == event.target.getAttribute("gender"))
+    return;
+
+  if (event.target.childElementCount)
+    return;
+
+  if (parseInt(event.target.getAttribute("value")) != parseInt(bottom.getAttribute("value")) + 1)
+    return;
+  
+  event.preventDefault();
+}
+
+let drop = event => {
+  event.preventDefault();
+
+  let data = event.dataTransfer.getData("x-solitaire/card");
+
+  if (data)
+    event.target.appendChild(document.getElementById(data));
+
+  if (event.target.classList.contains("foundation")) {
+    document.getElementById(data).classList.add("foundation");
+  } else if (document.getElementById(data).classList.contains("foundation")) {
+    document.getElementById(data).classList.remove("foundation");
+  }
+
+  event.dataTransfer.clearData("x-solitaire/card");
+};
+
+let recursiveValidateDraggable = element => {
+  if (element.children.length == 0)
+    return true;
+
+  let child = element.children[0];
+
+  if (element.getAttribute("gender") == child.getAttribute("gender"))
+    return false;
+
+  if (parseInt(child.getAttribute("value")) != parseInt(element.getAttribute("value")) - 1)
+    return false;
+
+  return recursiveValidateDraggable(child);
+};
+
+let drag = event => {
+  if (recursiveValidateDraggable(event.target))
+    event.dataTransfer.setData("x-solitaire/card", event.target.id);
+}
+
+let values = [
+  ['A', 1],
+  ['2', 2],
+  ['3', 3],
+  ['4', 4],
+  ['5', 5],
+  ['6', 6],
+  ['7', 7],
+  ['8', 8],
+  ['9', 9],
+  ['10', 10],
+  ['J', 11],
+  ['Q', 12],
+  ['K', 13]
+];
+
+let suits = [
+  ["♤", "club", "black"],
+  ["♡", "heart", "red"],
+  ["♧", "clover", "black"],
+  ["♢", "diamond", "red"],
+  ["♂", "male", "green"],
+  ["♀", "female", "green"],
+  ["+", "plus", "blue"],
+  ["-", "minus", "blue"]
+];
+
+let assembleRandomisedDeck = () => {
+  let initDeck = [];
+  suits.forEach(suit =>
+    values.forEach(value =>
+      initDeck.push({displayValue: value[0], value: value[1], displaySuit: suit[0], suit: suit[1], gender: suit[2]})
+    )
+  );
+  let randomisedDeck = [];
+  while (initDeck.length != 0) {
+    index = Math.floor(initDeck.length*Math.random());
+    randomisedDeck.push(initDeck[index]);
+    initDeck.splice(index, 1);
+  }
+  return randomisedDeck;
+};
+
+let addCard = parent => {
+  let data = deck.splice(0, 1)[0];
+  let card = document.createElement("span")
+  card.className = "card";
+  
+  card.id = Math.floor(10000 * Math.random());
+  card.draggable = true;
+
+  console.log(data);
+
+  card.setAttribute("gender", data.gender);
+  card.setAttribute("suit", data.suit);
+  card.setAttribute("value", data.value);
+
+  card.innerHTML = data.displayValue + data.displaySuit;
+
+  parent.appendChild(card);
+
+  return card;
+}
+
+window.addEventListener("DOMContentLoaded", () => {
+  document.addEventListener("dragstart", drag);
+  document.addEventListener("drop", drop);
+  document.addEventListener("dragover", allowdrop);
+  document.addEventListener("dragover", allowdrop);
+  deck = assembleRandomisedDeck();
+  let board = document.getElementById("board");
+
+  for (i=1; i<=9; i++) {
+    let cardStem = document.createElement("li");
+    board.appendChild(cardStem);
+    cardStem.className = "card-stem";
+
+    let lastChild = cardStem;
+
+    for (j=0; j<i; j++) {
+      let newChild = addCard(lastChild);
+      lastChild = newChild;
+    }
+  }
+
+  let foundations = document.getElementById("foundations");
+
+  suits.forEach(suit => {
+    let foundation = document.createElement("li");
+    foundation.className = "foundation";
+    foundation.setAttribute("suit", suit[1]);
+    foundations.appendChild(foundation);
+  });
+
+}, false);
+
+let next = () => {
+  if (deck.length) {
+    let next = document.getElementById("next");
+    if (next.children.length) {
+      next.removeChild(next.childNodes[0]);
+      resetDeck.push(tmpNext);
+    }
+    tmpNext = deck[0];
+    addCard(next);
+  } else {
+    deck = resetDeck;
+  }
+}
+</script>
+
+<style>
+
+.board {
+  display: inline-flex;
+  padding: 0px;
+  list-style: none;
+}
+
+.board li {
+  display: block;
+  width: 60px;
+  height: 75px;
+  position: relative;
+}
+
+.card {
+  border: 1px black solid;
+  border-radius: 5px;
+  width: 50px;
+  height: 75px;
+  background-color: white !important;
+  display: block;
+  position: absolute;
+  top: 20px;
+}
+
+.card[gender=red] {
+  color: red;
+}
+
+.card[gender=black] {
+  color: black;
+}
+
+.card[gender=green] {
+  color: green;
+}
+.card[gender=blue] {
+  color: blue;
+}
+
+.foundation {
+  background: lightgray;
+  margin-right: 5px;
+}
+
+.foundation .card {
+  top: 0px !important;
+}
+</style>
+
+<ul id="board" class="board">
+</ul>
+
+<button onclick="next()">Next</button>
+<ul class="board">
+<li id="next"></li>
+</ul>
+
+<ul class="board" id="foundations">
+</ul>
