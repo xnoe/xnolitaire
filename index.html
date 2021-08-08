@@ -3,6 +3,8 @@ let deck;
 let resetDeck = [];
 let tmpNext;
 
+let currentDragId;
+
 const tableauWidth = 9;
 
 let values = [
@@ -35,10 +37,12 @@ let suits = [
 ];
 
 let allowdrop = event => {
-  if (event.dataTransfer.getData("x-solitaire/card") == "")
+
+  console.log(event.dataTransfer.getData("x-solitaire/card"));
+  if (currentDragId == "")
     return;
 
-  let bottom = document.getElementById(event.dataTransfer.getData("x-solitaire/card"));
+  let bottom = document.getElementById(currentDragId);
   let bottom_gender = bottom.getAttribute("gender");
 
   if (event.target.classList.contains("foundation") &&
@@ -80,6 +84,7 @@ let drop = event => {
   }
 
   event.dataTransfer.clearData("x-solitaire/card");
+  currentDragId = "";
 };
 
 let recursiveValidateDraggable = element => {
@@ -98,8 +103,10 @@ let recursiveValidateDraggable = element => {
 };
 
 let drag = event => {
-  if (recursiveValidateDraggable(event.target))
+  if (recursiveValidateDraggable(event.target)) {
     event.dataTransfer.setData("x-solitaire/card", event.target.id);
+    currentDragId = event.target.id;
+  }
 }
 
 let assembleRandomisedDeck = () => {
@@ -145,7 +152,6 @@ let addCard = parent => {
 window.addEventListener("DOMContentLoaded", () => {
   document.addEventListener("dragstart", drag);
   document.addEventListener("drop", drop);
-  document.addEventListener("dragover", allowdrop);
   document.addEventListener("dragover", allowdrop);
   deck = assembleRandomisedDeck();
   let board = document.getElementById("board");
